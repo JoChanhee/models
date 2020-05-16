@@ -143,6 +143,16 @@ def vis_segmentation(image, seg_map, target_path):
   plt.grid('off')
 
 
+  mix = 0.5
+  image_np = np.asarray(image, dtype="uint8")
+  weighted_img = cv2.addWeighted(image_np, mix, seg_image, 1.0 - mix, 0)
+  # target_image = cv2.add(image_np, seg_image)
+  im = Image.fromarray(weighted_img)
+  im.save(target_path)
+
+  # plt.savefig(target_path)
+  # plt.show()
+
 
 LABEL_NAMES = np.asarray([
   'background',
