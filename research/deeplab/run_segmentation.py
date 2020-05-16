@@ -240,5 +240,18 @@ for filename in os.listdir(frame_dir):
   file_fullpath = os.path.join(frame_dir, filename)
   run_visualization(url=file_fullpath, target_path=os.path.join(output_dir, os.path.splitext(filename)[0]) + '_output.jpg')
 
-image_url = IMAGE_URL or _SAMPLE_URL % SAMPLE_IMAGE
-run_visualization(image_url)
+
+# 3. Make video with output frames
+# images = [img for img in os.listdir(output_dir) if img.endswith(".png")]  #
+images = os.listdir(output_dir)
+images.sort()
+frame = cv2.imread(os.path.join(output_dir, images[0]))
+height, width, layers = frame.shape
+
+video = cv2.VideoWriter(video_name, 0, fps, (width,height))
+
+for image in images:
+    video.write(cv2.imread(os.path.join(output_dir, image)))
+
+cv2.destroyAllWindows()
+video.release()
