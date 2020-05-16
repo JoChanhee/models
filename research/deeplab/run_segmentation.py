@@ -10,6 +10,8 @@ import numpy as np
 from PIL import Image
 
 import tensorflow as tf
+import cv2
+
 
 class DeepLabModel(object):
   """Class to load deeplab model and run inference."""
@@ -106,7 +108,7 @@ def label_to_color_image(label):
   return colormap[label]
 
 
-def vis_segmentation(image, seg_map):
+def vis_segmentation(image, seg_map, target_path):
   """Visualizes input image, segmentation map and overlay view."""
   plt.figure(figsize=(15, 5))
   grid_spec = gridspec.GridSpec(1, 4, width_ratios=[6, 6, 6, 1])
@@ -121,6 +123,7 @@ def vis_segmentation(image, seg_map):
   plt.imshow(seg_image)
   plt.axis('off')
   plt.title('segmentation map')
+
 
   plt.subplot(grid_spec[2])
   plt.imshow(image)
@@ -137,19 +140,19 @@ def vis_segmentation(image, seg_map):
   plt.xticks([], [])
   ax.tick_params(width=0.0)
   plt.grid('off')
-  plt.show()
+
 
 
 LABEL_NAMES = np.asarray([
-    'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'
+  'background',
+  'person'
 ])
 
 FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
 FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
-MODEL_NAME = 'mobilenetv2_coco_voctrainaug'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
+# TODO :: Need to modify model name using external parameters
+MODEL_NAME = 'xception_coco_voctrainval'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
 
 _DOWNLOAD_URL_PREFIX = 'http://download.tensorflow.org/models/'
 _MODEL_URLS = {
@@ -162,33 +165,41 @@ _MODEL_URLS = {
     'xception_coco_voctrainval':
         'deeplabv3_pascal_trainval_2018_01_04.tar.gz',
 }
-_TARBALL_NAME = 'deeplab_model.tar.gz'
+_TARBALL_NAME = MODEL_NAME + '.tar.gz' # 'deeplab_model.tar.gz'
 
-model_dir = tempfile.mkdtemp()
-tf.gfile.MakeDirs(model_dir)
 
-download_path = os.path.join(model_dir, _TARBALL_NAME)
-print('downloading model, this might take a while...')
-urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME],
-                   download_path)
-print('download completed! loading DeepLab model...')
+# TODO :: Check if there is a model or not
+# model_dir = tempfile.mkdtemp()
+# tf.gfile.MakeDirs("model")
+#
+download_path = os.path.join("model", _TARBALL_NAME)
+# print('downloading model, this might take a while...')
+# urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME],
+#                    download_path)
+# print('download completed! loading DeepLab model...')
 
 MODEL = DeepLabModel(download_path)
 print('model loaded successfully!')
 
+
 SAMPLE_IMAGE = 'image1'  # @param ['image1', 'image2', 'image3']
-IMAGE_URL = ''  #@param {type:"string"}
+# IMAGE_URL = 'http://photo.jtbc.joins.com/news/2019/01/08/201901081539178857.jpg'  #@param {type:"string"}
 
 _SAMPLE_URL = ('https://github.com/tensorflow/models/blob/master/research/'
                'deeplab/g3doc/img/%s.jpg?raw=true')
 
 
-def run_visualization(url):
+
+def run_visualization(url, target_path):
   """Inferences DeepLab model and visualizes result."""
+  # TODO :: Need to modify url to path
   try:
-    f = urllib.request.urlopen(url)
-    jpeg_str = f.read()
-    original_im = Image.open(BytesIO(jpeg_str))
+    # f = urllib.request.urlopen(url)
+    # jpeg_str = f.read()
+    # original_im = Image.open(BytesIO(jpeg_str))
+
+
+    original_im = Image.open(url)
   except IOError:
     print('Cannot retrieve image. Please check url: ' + url)
     return
@@ -196,7 +207,32 @@ def run_visualization(url):
   print('running deeplab on image %s...' % url)
   resized_im, seg_map = MODEL.run(original_im)
 
-  vis_segmentation(resized_im, seg_map)
+  vis_segmentation(resized_im, seg_map, target_path)
+
+
+# image_url = IMAGE_URL or _SAMPLE_URL % SAMPLE_IMAGE
+
+
+# TODO :: Need to modify video paths using external parameters
+target_video = 'data/input_lia.mp4'
+frame_dir = 'data/lia_overlay_frames3'
+output_dir = 'output/lia_overlay_frames3'
+
+video_name = 'output_video/lia_overlay3.avi'
+
+# 1. Frame extraction
+vidcap = cv2.VideoCapture(target_video)
+fps = vidcap.get(cv2.CAP_PROP_FPS)
+height = vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+width = vidcap.get(cv2.CAP_PROP_FRAME_WIDTH)
+success,image = vidcap.read()
+count = 0
+while success:
+  cv2.imwrite(os.path.join(frame_dir, "frame%05d.jpg" % count), image)     # save frame as JPEG file
+  success,image = vidcap.read()
+  if count % 60 == 0:
+    print('Read a new frame: ', success, " / ", str(count))
+  count += 1
 
 
 image_url = IMAGE_URL or _SAMPLE_URL % SAMPLE_IMAGE
