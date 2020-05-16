@@ -79,6 +79,12 @@ def create_pascal_label_colormap():
       colormap[:, channel] |= ((ind >> channel) & 1) << shift
     ind >>= 3
 
+  # TODO :: Need to modify color map with labels
+  for idx, color in enumerate(colormap):
+    colormap[idx] = [42, 255, 0]
+
+  colormap[0] = [255, 255, 255]
+
   return colormap
 
 
@@ -119,6 +125,19 @@ def vis_segmentation(image, seg_map, target_path):
   plt.axis('off')
   plt.title('input image')
 
+
+  # for y, y_map in enumerate(seg_map):
+  #   for x, x_map in enumerate(y_map):
+  #     if seg_map[y][x] != 0:
+  #       seg_map[y][x] = 1
+  #
+  # mask_map = np.int8(seg_map)
+
+
+  # cv2.imwrite(IMAGE_URL + "_map.png", mask_map)
+
+  # png.from_array(mask_map, mode="L").save("map.png")
+
   plt.subplot(grid_spec[1])
   seg_image = label_to_color_image(seg_map).astype(np.uint8)
   plt.imshow(seg_image)
@@ -133,6 +152,11 @@ def vis_segmentation(image, seg_map, target_path):
   plt.title('segmentation overlay')
 
   unique_labels = np.unique(seg_map)
+
+  for idx, label in enumerate(unique_labels):
+    if label != 0:
+      unique_labels[idx] = 1
+
   ax = plt.subplot(grid_spec[3])
   plt.imshow(
       FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
