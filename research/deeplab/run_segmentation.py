@@ -105,6 +105,7 @@ def label_to_color_image(label):
   if np.max(label) >= len(colormap):
     raise ValueError('label value too large.')
 
+
   return colormap[label]
 
 
@@ -234,6 +235,10 @@ while success:
     print('Read a new frame: ', success, " / ", str(count))
   count += 1
 
+# 2. Inference multiple images
+for filename in os.listdir(frame_dir):
+  file_fullpath = os.path.join(frame_dir, filename)
+  run_visualization(url=file_fullpath, target_path=os.path.join(output_dir, os.path.splitext(filename)[0]) + '_output.jpg')
 
 image_url = IMAGE_URL or _SAMPLE_URL % SAMPLE_IMAGE
 run_visualization(image_url)
